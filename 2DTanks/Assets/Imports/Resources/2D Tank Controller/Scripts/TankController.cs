@@ -396,7 +396,25 @@ public class TankController : MonoBehaviour
     [Tooltip("[Optional] GameObject with a 3D collider and rigidbody (with IsKinematic turned on) that triggers the base capturing.")]
     public GameObject CapDetection;     
 
+    [Space(40)]
+    [Header("__________________________MachineGun____________________________________________________________________________________________________________________________________________________________")]
+    [Space(10)]
 
+    public bool machineGunEnable = false;
+    public GameObject machineGunPort;
+    public GameObject machineGunShell;
+    public int machineGunRounds = 30;
+    public int machineGunReloadSpeed;
+    public float machineGunRateFire =1f;
+    public float machineGunSpread = 0.1f;
+
+    public AudioSource machineGunFireAudio;
+    public AudioSource machineGunReloadAudio;
+
+    private bool machineGunReloaded = false;
+    private float machineGunReloadTime = 0;
+    private int machineGunAmmo = 0;
+    private float machineGunRate;
 
 
 
@@ -1581,9 +1599,6 @@ public class TankController : MonoBehaviour
         yield return null;
     }
 
-
-
-
     //------------------------------------------------------------------------------------------------------------
     //                                                Events
     //------------------------------------------------------------------------------------------------------------
@@ -1686,6 +1701,7 @@ public class TankController : MonoBehaviour
         //                     Shooting
         //---------------------------------------------------
         reloaded = true;
+        machineGunAmmo = machineGunRounds;
 
         reloadSoundPlayed = false;
         hullOriginVector = new Vector3(0, 0, 1);
@@ -1978,11 +1994,6 @@ public class TankController : MonoBehaviour
 
 
 
-
-
-
-
-
     //_________________________________________________UPDATE_______________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
 
@@ -2018,7 +2029,26 @@ public class TankController : MonoBehaviour
         if (InputEnabled == false)
             DisableInput();
 
+        //--------machine gun---------------------------
+        if ((Input.GetKey(KeyCode.Space) && machineGunEnable && machineGunReloaded) && machineGunRate >= machineGunRateFire){
+            Debug.Log("brrr");
+            machineGunRounds-=1;
+            machineGunFireAudio.Play();
 
+            Vector3 PortPosition = machineGunPort.transform.position;
+            int random = Random.Range(0,3);//random turrent to hull
+            if(random == 0){
+                PortPosition = machineGunPort.transform.position + hullOriginVector;
+            }
+            float RandomSpread = Random.Range(-machineGunSpread,machineGunSpread);
+            Instantiate(machineGunShell, PortPosition, Quaternion.Euler(0, 0 , Turret.transform.eulerAngles.z + RandomSpread));
+            if(machineGunRounds <= 0){
+                machineGunReloaded = false;
+                machineGunReloadAudio.Play();
+                machineGunRounds=0;
+            }
+            machineGunRate = 0;//reset rate of fire timer
+        }
 
 
 
@@ -2054,6 +2084,23 @@ public class TankController : MonoBehaviour
             if (UseUI == true)
             TankReloadCG.alpha = 0;
         }
+
+        //---------reloading machine gun------------------
+        if(machineGunReloaded == false && machineGunEnable && machineGunReloadTime < machineGunReloadSpeed){
+            machineGunReloadTime += Time.deltaTime;
+        }
+
+        if(machineGunReloadTime >= machineGunReloadSpeed && !machineGunReloaded){
+            machineGunReloaded = true;
+            machineGunReloadTime = 0;
+            machineGunRounds = machineGunAmmo;
+        }
+
+        if( machineGunRate < machineGunRateFire){
+            machineGunRate += Time.deltaTime;
+        }
+
+
 
         //---------------------------------------------------
         //                    Ramming
@@ -2222,12 +2269,7 @@ public class TankController : MonoBehaviour
         // Calculating pushing force for destroying structures (buildings and walls)
         PushingForce = (Mathf.Pow(Rigidbody.velocity.magnitude, 2) * Rigidbody.mass + EnginePower * (Mathf.Abs(verticalInput) + (Mathf.Abs(horizontalInput) * 0.1f)) * Rigidbody.mass) / 10000;
     }
-
-
-
-
-
-
+    
 
 
     //____________________________________________FIXED UPDATE______________________________________________________________________________________________________________________________________________________________________________________________________________________________
