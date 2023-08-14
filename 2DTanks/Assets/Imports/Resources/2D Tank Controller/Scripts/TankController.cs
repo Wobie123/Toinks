@@ -405,6 +405,7 @@ public class TankController : MonoBehaviour
     public GameObject machineGunShell;
     public int machineGunRounds = 30;
     public int machineGunReloadSpeed;
+    [Range(0.2f,0.06f)]
     public float machineGunRateFire =1f;
     public float machineGunSpread = 0.1f;
 
@@ -2030,7 +2031,7 @@ public class TankController : MonoBehaviour
             DisableInput();
 
         //--------machine gun---------------------------
-        if ((Input.GetKey(KeyCode.Space) && machineGunEnable && machineGunReloaded) && machineGunRate >= machineGunRateFire){
+        if (Input.GetKey(KeyCode.Space) && machineGunEnable && machineGunReloaded && machineGunRate >= machineGunRateFire && InputEnabled == true){
             Debug.Log("brrr");
             machineGunRounds-=1;
             machineGunFireAudio.Play();
