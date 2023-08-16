@@ -567,6 +567,7 @@ public class TankController : MonoBehaviour
     private GameObject TankUI;
     private Vector3 UiPos;
     private float initialUiYMax;
+    private bool camoNet = false;
     
 
     private RaycastHit TankUiHit;
@@ -673,6 +674,7 @@ public class TankController : MonoBehaviour
     // Function for firing the gun
     private void Fire()
     {
+        camoNet = false;
         timeReloaded = 0;
         reloaded = false;
 
@@ -1079,6 +1081,7 @@ public class TankController : MonoBehaviour
     // Function that reduces the tank's HP. This function is called by the shell controller.
     public void TakeDamage(int amount)
     {
+        camoNet = false;
         previousHp = Health;
 
         Health -= amount;
@@ -1106,6 +1109,7 @@ public class TankController : MonoBehaviour
     // Function that reduces track hp when the tracks are shot. This function is called by the shell controller.
     public void TakeTrackDamage(int amount, string side, string wheel)
     {
+        camoNet = false;
         // Left track is being damaged
         if (side == "l")
         {
@@ -1300,7 +1304,7 @@ public class TankController : MonoBehaviour
         // Track image flashing
         TrackImageCG.alpha = Mathf.Sin(Time.time * 8) * 4;
 
-
+        
 
 
 
@@ -1346,7 +1350,7 @@ public class TankController : MonoBehaviour
 
 
         // If the UI is not over another UI or tank -> Set opacity back to 100%
-        else if (TankUiHit2 == false && tankUiHitHitting == false)
+        else if (TankUiHit2 == false && tankUiHitHitting == false && !camoNet)
         {
             TankUI.GetComponent<CanvasGroup>().alpha = 1f;
         }
@@ -1608,7 +1612,6 @@ public class TankController : MonoBehaviour
     // Tank collision (ramming mechanics and collision sounds)
     private void OnCollisionEnter2D(Collision2D collision)
     {
-
         // Slow collision sound
         if (Mathf.Abs(currentSpeed) > 3 && Mathf.Abs(currentSpeed) < 7 && AudioCrashSmall != null)
         {
@@ -2306,5 +2309,15 @@ public class TankController : MonoBehaviour
         // Setting aimpoint position
         if (Aimpoint != null && TurretInputMode == TurretInputModeEnum.Mouse)
             Aimpoint.transform.position = Camera.main.ScreenToWorldPoint(Input.mousePosition) - new Vector3 (0,0,-1);
+    }
+    //----------------------------------------Additional added stuff
+    public void ChangeUI(bool result){
+        if(result){
+            camoNet = true;
+            TankUI.GetComponent<CanvasGroup>().alpha = 0f;
+        }else{
+            camoNet = false;
+            TankUI.GetComponent<CanvasGroup>().alpha = 1f;
+        }
     }
 }
