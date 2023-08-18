@@ -568,7 +568,6 @@ public class TankController : MonoBehaviour
     private Vector3 UiPos;
     private float initialUiYMax;
     private bool camoNet = false;
-    
 
     private RaycastHit TankUiHit;
     private bool tankUiHitHitting;
@@ -1110,6 +1109,7 @@ public class TankController : MonoBehaviour
     public void TakeTrackDamage(int amount, string side, string wheel)
     {
         camoNet = false;
+        
         // Left track is being damaged
         if (side == "l")
         {
@@ -2319,5 +2319,9 @@ public class TankController : MonoBehaviour
             camoNet = false;
             TankUI.GetComponent<CanvasGroup>().alpha = 1f;
         }
+    }
+
+    public bool CheckCamo(){
+        return camoNet;
     }
 }
