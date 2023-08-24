@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-
+//---------------------------------Global---------------------------------
+public enum TankTeamEnum{
+        NULL,Team1, Team2
+    };
 public class TankController : MonoBehaviour
 {
     /*      Description:
@@ -157,9 +160,9 @@ public class TankController : MonoBehaviour
     {
         LT, MT, HT, TD
     };
-
+    [Tooltip("Team tank is on")]
+    public TankTeamEnum TankTeam;
     
-
 
 
     //---------------------------------------------------
@@ -508,7 +511,8 @@ public class TankController : MonoBehaviour
 
     private GameObject DummyGun;
 
-
+    //[HideInInspector]public 
+    private bool wasHit = false;
 
     //---------------------------------------------------
     //                    Health
@@ -596,7 +600,7 @@ public class TankController : MonoBehaviour
 
     // Base capturing
     [Tooltip("The amount of capture points. Also the time spent in the cap area in seconds, if the CapSpeed variable in the Cap Controller is 1.")]
-    public float CapturePoints;
+    //public float CapturePoints;
 
     private GameObject Aimpoint;
     private Image AimpointUnaimedImage;
@@ -1080,6 +1084,7 @@ public class TankController : MonoBehaviour
     // Function that reduces the tank's HP. This function is called by the shell controller.
     public void TakeDamage(int amount)
     {
+        wasHit = true;
         camoNet = false;
         previousHp = Health;
 
@@ -2323,5 +2328,18 @@ public class TankController : MonoBehaviour
 
     public bool CheckCamo(){
         return camoNet;
+    }
+
+    public bool CheckHit(){
+        //resets it
+        if(wasHit){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public void ResetWasHit(){
+        wasHit = false;
     }
 }
