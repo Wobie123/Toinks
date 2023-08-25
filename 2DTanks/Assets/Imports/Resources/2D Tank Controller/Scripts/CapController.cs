@@ -112,6 +112,7 @@ public class CapController : MonoBehaviour
 
         if(UiTarget != null){//setup
             capUi = Instantiate(Resources.Load("2D Tank Controller/" + UiPath, typeof(GameObject)), UiTarget.transform.position, Quaternion.identity, UiTarget.transform.parent.transform) as GameObject;
+            
             mainUICanvas = capUi.GetComponent<CanvasGroup>();
             teamNameText = capUi.transform.Find("Slider").Find("TeamNameText").GetComponent<Text>();
             pointsText = capUi.transform.Find("Slider").Find("PointsText").GetComponent<Text>();
@@ -133,6 +134,7 @@ public class CapController : MonoBehaviour
     // Tank goes into the cap area
     private void OnTriggerEnter(Collider collision)
     {
+        Debug.Log(collision.name);
         tanksInCap++;
         capturingTankController.Add(collision.GetComponentInParent<TankController>());
         //reset just if take damage before
@@ -193,6 +195,8 @@ public class CapController : MonoBehaviour
                     points = 0;
                     tank.ResetWasHit();
                 }
+                
+
             }
         }
     }
