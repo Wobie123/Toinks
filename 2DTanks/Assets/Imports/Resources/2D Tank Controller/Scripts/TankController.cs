@@ -2342,4 +2342,12 @@ public class TankController : MonoBehaviour
     public void ResetWasHit(){
         wasHit = false;
     }
+
+    public void ShouldFire(){
+        // Calling the Fire function if alive and reloaded
+        if (reloaded == true && IsExploded == false)
+        {
+            Fire();
+        }
+    }
 }

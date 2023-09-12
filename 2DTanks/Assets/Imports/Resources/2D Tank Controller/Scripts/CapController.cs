@@ -134,7 +134,7 @@ public class CapController : MonoBehaviour
     // Tank goes into the cap area
     private void OnTriggerEnter(Collider collision)
     {
-        Debug.Log(collision.name);
+        //Debug.Log(collision.name);
         tanksInCap++;
         capturingTankController.Add(collision.GetComponentInParent<TankController>());
         //reset just if take damage before
