@@ -2040,23 +2040,7 @@ public class TankController : MonoBehaviour
 
         //--------machine gun---------------------------
         if (Input.GetKey(KeyCode.Space) && machineGunEnable && machineGunReloaded && machineGunRate >= machineGunRateFire && InputEnabled == true){
-            Debug.Log("brrr");
-            machineGunRounds-=1;
-            machineGunFireAudio.Play();
-
-            Vector3 PortPosition = machineGunPort.transform.position;
-            int random = Random.Range(0,3);//random turrent to hull
-            if(random == 0){
-                PortPosition = machineGunPort.transform.position + hullOriginVector;
-            }
-            float RandomSpread = Random.Range(-machineGunSpread,machineGunSpread);
-            Instantiate(machineGunShell, PortPosition, Quaternion.Euler(0, 0 , Turret.transform.eulerAngles.z + RandomSpread));
-            if(machineGunRounds <= 0){
-                machineGunReloaded = false;
-                machineGunReloadAudio.Play();
-                machineGunRounds=0;
-            }
-            machineGunRate = 0;//reset rate of fire timer
+            FireMachineGun();
         }
 
 
@@ -2277,8 +2261,25 @@ public class TankController : MonoBehaviour
         
         // Calculating pushing force for destroying structures (buildings and walls)
         PushingForce = (Mathf.Pow(Rigidbody.velocity.magnitude, 2) * Rigidbody.mass + EnginePower * (Mathf.Abs(verticalInput) + (Mathf.Abs(horizontalInput) * 0.1f)) * Rigidbody.mass) / 10000;
+    }//end of update
+    private void FireMachineGun(){
+            machineGunRounds-=1;
+            machineGunFireAudio.Play();
+
+            Vector3 PortPosition = machineGunPort.transform.position;
+            int random = Random.Range(0,3);//random turrent to hull
+            if(random == 0){
+                PortPosition = machineGunPort.transform.position + hullOriginVector;
+            }
+            float RandomSpread = Random.Range(-machineGunSpread,machineGunSpread);
+            Instantiate(machineGunShell, PortPosition, Quaternion.Euler(0, 0 , Turret.transform.eulerAngles.z + RandomSpread));
+            if(machineGunRounds <= 0){
+                machineGunReloaded = false;
+                machineGunReloadAudio.Play();
+                machineGunRounds=0;
+            }
+            machineGunRate = 0;//reset 
     }
-    
 
 
     //____________________________________________FIXED UPDATE______________________________________________________________________________________________________________________________________________________________________________________________________________________________
@@ -2348,6 +2349,8 @@ public class TankController : MonoBehaviour
         if (reloaded == true && IsExploded == false)
         {
             Fire();
+        }else if(reloaded == false&& timeReloaded+1 < ReloadTime &&IsExploded == false && machineGunEnable && machineGunReloaded && machineGunRate >= machineGunRateFire){
+            FireMachineGun();
         }
     }
 }

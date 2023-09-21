@@ -17,15 +17,6 @@ public class CamoNet : MonoBehaviour
     {
 
     }
-
-    /*
-    void OnTriggerEnter2D(Collider2D col)
-    {
-        if(col.gameObject.GetComponent<TankController>() != null){
-           col.gameObject.GetComponent<TankController>().ChangeUI(true);
-        }
-    }*/
-
     void OnTriggerStay2D(Collider2D col)
     {
         if(col.gameObject.GetComponent<TankController>() != null &&  !col.gameObject.GetComponent<TankController>().CheckCamo()){
