@@ -14,7 +14,7 @@ public class TankBot : MonoBehaviour
 
 
     //--------------detection----------------
-    public float detectionRange = 30f;
+    public float detectionRange = 40f;
     private Transform gunTip;
 
     public LayerMask objectLayer;
@@ -55,7 +55,6 @@ public class TankBot : MonoBehaviour
     private void RotateTo(Transform target){
         if(target == null){
             Detection(detectionIndex);
-            Debug.Log("switch1");
             return;
         }
 
@@ -77,7 +76,7 @@ public class TankBot : MonoBehaviour
             if(hit.collider.gameObject.GetComponent<TankController>() != null){//check if tank
                 TankController enemyTank = hit.collider.gameObject.GetComponent<TankController>();
              
-                if(enemyTank.TankTeam != tankController.TankTeam && !tankController.CheckCamo()){
+                if(enemyTank.TankTeam != tankController.TankTeam && !enemyTank.CheckCamo()){
                     tankController.ShouldFire();
                     StopAllCoroutines();
                     StartCoroutine(DetectionDelay(2f));

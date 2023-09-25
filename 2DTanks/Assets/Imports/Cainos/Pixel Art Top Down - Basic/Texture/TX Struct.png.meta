@@ -521,9 +521,9 @@ TextureImporter:
       name: TX Stairs Broken L M
       rect:
         serializedVersion: 2
-        x: 136
+        x: 129
         y: 256
-        width: 49
+        width: 64
         height: 96
       alignment: 7
       pivot: {x: 0.5, y: 0}
