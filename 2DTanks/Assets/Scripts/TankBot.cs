@@ -4,22 +4,38 @@ using UnityEngine;
 
 public class TankBot : MonoBehaviour
 {
+    private GameObject wayPointObj;
     public Transform targets;//change this to list
     private Transform turrent;
     private TankController tankController;
     [Tooltip("offset")]
     public float rotationModifier = 90;
-    private int turrentSpeed;
+    private float turrentSpeed;
     private bool initChangeTarget = false;//to make change target not called too much
-
+    
 
     //--------------detection----------------
-    public float detectionRange = 40f;
+    public float detectionRange = 30f;
     private Transform gunTip;
 
-    public LayerMask objectLayer;
+    private LayerMask objectLayer;
 
     private int detectionIndex = 0;//circular loop
+
+
+    //--------------movement--------------------
+
+    /*map range 
+     x:  Range(-52.5f, 61.5f)
+     y: Range(33f,-77.7f)
+    */
+
+    public bool moveable = true;
+    private float traverseSpeed;
+    private float movementSpeed;
+    
+    private Transform wayPoint;
+
 
     [Header("Read Only")]
     //replace with targets
@@ -28,7 +44,9 @@ public class TankBot : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        wayPointObj = new GameObject("Waypoint");
+        wayPoint = wayPointObj.transform;
+        objectLayer = LayerMask.GetMask("Physics Model");
         tankController = gameObject.GetComponent<TankController>();
         if(tankController.HasNoTurret){//tank destroyer
             turrent = this.transform;
@@ -38,8 +56,11 @@ public class TankBot : MonoBehaviour
             turrent = transform.GetChild(0);
             gunTip = turrent.GetChild(2);
         }
-        turrentSpeed = tankController.TurretTraverseSpeed/20;
-       
+
+        turrentSpeed = (float)tankController.TurretTraverseSpeed/55;//reduce speed
+        traverseSpeed = (float)tankController.TraverseSpeed/55;
+        movementSpeed = (float)tankController.TopSpeed/5;
+        ChangeMovement();//set a waypoint
     }
 
     // Update is called once per frame
@@ -48,21 +69,22 @@ public class TankBot : MonoBehaviour
        
         if(tankController == null)  Destroy(gameObject.GetComponent<TankBot>());//gone
 
-        RotateTo(targets);
-        
+        TurrentControls(targets);
+
+        //does not move if have target or disabled
+        if(moveable && targets == null){
+            Movement();
+        }
+
     }
 
-    private void RotateTo(Transform target){
+    private void TurrentControls(Transform target){
         if(target == null){
             Detection(detectionIndex);
             return;
         }
-
-       Vector3 vectorToTarget = target.position - turrent.position;
-      
-       float angle = Mathf.Atan2(vectorToTarget.y,vectorToTarget.x)* Mathf.Rad2Deg - rotationModifier;
-       Quaternion q = Quaternion.AngleAxis(angle,Vector3.forward);
-       turrent.rotation = Quaternion.Slerp(turrent.rotation,q,Time.deltaTime* turrentSpeed);
+        
+       RotateTo(turrent,target,turrentSpeed);
        
         //-------------------------shooting---------------------------------------
         RaycastHit2D hit;
@@ -97,7 +119,7 @@ public class TankBot : MonoBehaviour
 
     private void ChangeTarget(){
         StopAllCoroutines();
-        StartCoroutine(DetectionDelay(4f));
+        StartCoroutine(DetectionDelay(3f));
     }
     //decide if should shoot
     
@@ -123,9 +145,71 @@ public class TankBot : MonoBehaviour
         initChangeTarget = true;
     }
 
-    private void OnDrawGizmos()
+    IEnumerator ChangeWayPointDelay(float delay){
+         yield return new WaitForSeconds(delay);
+         ChangeMovement();
+    }
+
+    private void OnDrawGizmos()//draws the detection radius (view on gizmos)
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
+    }
+
+    private void ChangeMovement(){
+        wayPoint.position = new Vector3(Random.Range(-52.5f, 61.5f),Random.Range(33f,-77.7f),0);
+        if(targets == null){//in case stuck
+            StopAllCoroutines();
+            StartCoroutine(ChangeWayPointDelay(12f));
+        }
+    }
+
+    private bool RotateTo(Transform myself,Transform target,float speed){
+         if (target != null)
+        {
+            
+            // Calculate the direction from the object to the target.
+            Vector3 vectorToTarget = target.position - myself.position;
+
+            // Calculate the rotation angle needed to face the target.
+            float angle = Mathf.Atan2(vectorToTarget.y,vectorToTarget.x)* Mathf.Rad2Deg - rotationModifier;
+
+            // Create a rotation based on the calculated angle.
+            Quaternion targetRotation = Quaternion.AngleAxis(angle,Vector3.forward);
+
+            // Rotate the object smoothly towards the target rotation.
+            myself.rotation = Quaternion.Slerp(myself.rotation,targetRotation,speed *Time.deltaTime);
+            
+            if (Quaternion.Angle(myself.rotation, targetRotation) < 1.0f){
+                return true; 
+            }
+    }
+     return false;
+    }
+    private void Movement(){
+
+
+        if (Vector2.Distance(transform.position, wayPoint.position) < 1f){
+                ChangeMovement();//changes waypoint
+        }
+        if( RotateTo(this.transform,wayPoint,traverseSpeed))
+                MoveTowards(wayPoint.position);
+
+        
+        
+    }
+
+    private void MoveTowards(Vector3 targetPosition)
+    {
+        // Move the AI towards the current waypoint.
+        //redo this part so it affect ridgid body
+        transform.position = Vector2.MoveTowards(transform.position, targetPosition,movementSpeed* Time.deltaTime);
+        /*if(Vector2.Distance(transform.position, targetPosition) < 1f){
+            tankController.verticalInput = 0;
+            tankController.SlowDown();
+        }else{
+            tankController.verticalInput = 1;
+            tankController.MoveForward();
+        }*/
     }
 }

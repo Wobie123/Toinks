@@ -5,7 +5,7 @@ using UnityEngine;
 public class CamoNet : MonoBehaviour
 {
     [HideInInspector]public float setTimer = 0;
-    private float length = 4;
+    private float length = 2;
     // Start is called before the first frame update
     void Start()
     {
