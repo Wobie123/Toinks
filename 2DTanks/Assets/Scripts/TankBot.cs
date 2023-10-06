@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Multiplayer.Samples.Utilities.ClientAuthority;
 using UnityEngine;
 
 public class TankBot : MonoBehaviour
@@ -35,6 +36,7 @@ public class TankBot : MonoBehaviour
     private float movementSpeed;
     
     private Transform wayPoint;
+    private Rigidbody2D rb;
 
 
     [Header("Read Only")]
@@ -44,6 +46,7 @@ public class TankBot : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        rb = GetComponent<Rigidbody2D>();
         wayPointObj = new GameObject("Waypoint");
         wayPoint = wayPointObj.transform;
         objectLayer = LayerMask.GetMask("Physics Model");
@@ -201,15 +204,17 @@ public class TankBot : MonoBehaviour
 
     private void MoveTowards(Vector3 targetPosition)
     {
-        // Move the AI towards the current waypoint.
-        //redo this part so it affect ridgid body
-        transform.position = Vector2.MoveTowards(transform.position, targetPosition,movementSpeed* Time.deltaTime);
-        /*if(Vector2.Distance(transform.position, targetPosition) < 1f){
-            tankController.verticalInput = 0;
-            tankController.SlowDown();
+       
+       Vector2 direction = targetPosition - transform.position;
+
+       direction.Normalize();
+
+       Vector2 movement = direction * movementSpeed;
+        if(!tankController.tracked){
+            rb.velocity = movement;
         }else{
-            tankController.verticalInput = 1;
-            tankController.MoveForward();
-        }*/
+            rb.velocity = Vector2.zero;
+        }
+
     }
 }

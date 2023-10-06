@@ -529,7 +529,7 @@ public class TankController : MonoBehaviour
     //                  Track Health
     //---------------------------------------------------
 
-    private bool tracked;
+    public bool tracked;
 
     private bool lTrackTracked;
     private bool rTrackTracked;
