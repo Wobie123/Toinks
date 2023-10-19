@@ -27,8 +27,8 @@ public class TankBot : MonoBehaviour
     //--------------movement--------------------
 
     /*map range 
-     x:  Range(-52.5f, 61.5f)
-     y: Range(33f,-77.7f)
+     x:  Range(-58.4f, 52.5f)
+     y: Range(56.2f,-57.4f)
     */
 
     public bool moveable = true;
@@ -160,7 +160,7 @@ public class TankBot : MonoBehaviour
     }
 
     private void ChangeMovement(){
-        wayPoint.position = new Vector3(Random.Range(-52.5f, 61.5f),Random.Range(33f,-77.7f),0);
+        wayPoint.position = new Vector3(Random.Range(-58.4f, 56.2f),Random.Range(52.5f,-57.4f),0);
         if(targets == null){//in case stuck
             StopAllCoroutines();
             StartCoroutine(ChangeWayPointDelay(12f));
