@@ -2,11 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
-public enum Current{
-        USA,
-        Germany,
-        Russia
-    };
+using TMPro;
 public class PlayerSpawn : NetworkBehaviour
 {
 
@@ -14,21 +10,26 @@ public class PlayerSpawn : NetworkBehaviour
     private CameraAim camera;
     private Transform selectionButtons;
     private GameObject player = null;
+    TankController controller;
     private Vector3 spawnpos;
     private Quaternion rotation;
-    [SerializeField] private Transform usaGrid;
-    [SerializeField] private Transform germanyGrid;
-    [SerializeField] private Transform ussrGrid;
+    private bool IsActive = false;//check if player is alive
+    private TMP_Text countDownText;
+    private GameObject countDown;
+    private float timer = 5f;
+
+     private Transform usaGrid;
+     private Transform germanyGrid;
+     private Transform ussrGrid;
     public List<GameObject> tankList = new List<GameObject>();
     
-
-    
-    private Current current;
 
     // Start is called before the first frame update
     void Start()
     {
-        current = Current.USA;
+        countDown = this.gameObject.transform.GetChild(1).gameObject;
+        countDownText = countDown.GetComponent<TextMeshProUGUI>();
+
         camera = GameObject.Find("Main Camera").GetComponent<CameraAim>();
         //selectionButtons = this.gameObject.transform.GetChild(0);
         //usaGrid = this.gameObject.transform.GetChild(1);
@@ -47,27 +48,43 @@ public class PlayerSpawn : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-    
+
+            if(controller == null && IsActive){//just died
+                Debug.Log("hi");
+                countDown.SetActive(true);
+
+                countDownText.text = Mathf.RoundToInt(timer).ToString();
+                timer -= Time.deltaTime;
+                if(timer <= 0f){
+                    countDown.SetActive(false);
+                    transform.GetChild(0).gameObject.SetActive(true);
+                    IsActive = false;
+                    timer = 0f;
+                }
+                
+        }
     }
+
+  
 
     public void ChangeGrid(int index){
         
         switch(index){
             case 1:
-                current = Current.USA;
+                
                 usaGrid.gameObject.SetActive(true);
                 germanyGrid.gameObject.SetActive(false);
                 ussrGrid.gameObject.SetActive(false);
                 break;
             case 2:
-                current = Current.Germany;
+                
                 usaGrid.gameObject.SetActive(false);
                 germanyGrid.gameObject.SetActive(true);
                 ussrGrid.gameObject.SetActive(false);
                 break;
 
             case 3:
-                current = Current.Russia;
+                
                 usaGrid.gameObject.SetActive(false);
                 germanyGrid.gameObject.SetActive(false);
                 ussrGrid.gameObject.SetActive(true);
@@ -96,19 +113,13 @@ public class PlayerSpawn : NetworkBehaviour
      y: Range(33f,-77.7f)
     */
     private void SelectTank(GameObject tank){
-        /*
-        float xpos = Random.Range(-58.4f, 52.5f);
-        float ypos = Random.Range(56.2f,-57.4f);
-        Vector3 spawnpos = new Vector3(xpos,ypos,0);
-       
-        rotationlogic(xpos,ypos);*/
 
         player = tank;
         ulong clientId = NetworkManager.Singleton.LocalClientId;
-        Debug.Log(clientId + "choose a tank:"+ tank.name);
         SpawnTankServerRpc();
 
-        this.gameObject.SetActive(false);
+        //this.gameObject.SetActive(false);
+        transform.GetChild(0).gameObject.SetActive(false);
     }
 
     public GameObject FindPrefabByName(string prefabName)
@@ -128,7 +139,7 @@ public class PlayerSpawn : NetworkBehaviour
 
     [ServerRpc(RequireOwnership = false)]
     // request from client, grabs the clinet id and send to client
-    public void SpawnTankServerRpc(ServerRpcParams serverRpcParams = default){
+    private void SpawnTankServerRpc(ServerRpcParams serverRpcParams = default){
         Debug.Log(OwnerClientId + "called serverRPC");
         
         var clientId = serverRpcParams.Receive.SenderClientId;
@@ -139,8 +150,7 @@ public class PlayerSpawn : NetworkBehaviour
 
     //spawns the player and send to client
     [ServerRpc(RequireOwnership = false)]
-     public void tankSetupServerRpc(ulong ClientID,string name){
-        Debug.Log("within tankSetupRPC");
+     private void tankSetupServerRpc(ulong ClientID,string name){
         //GameObject prefab = NetworkManager.Singleton.SpawnManager.GetPrefabFromHash(prefabHash);
         
         float xpos = Random.Range(-58.4f, 52.5f);
@@ -156,11 +166,9 @@ public class PlayerSpawn : NetworkBehaviour
 
     [ClientRpc]
     //recive form server and send the prefab;
-    public void SpawnTankLocalClientRpc(ulong ID){
+    private void SpawnTankLocalClientRpc(ulong ID){
         
         ulong clientId = NetworkManager.Singleton.LocalClientId;
-        Debug.Log("within SpawnSetupClientRPC");
-        Debug.Log("the passed perameter is: " +ID + "clientID is "+ clientId + " spawn " + player.name);
         if(clientId == ID){
             //player = Instantiate(player,spawnpos,rotation);
             //player.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
@@ -170,20 +178,26 @@ public class PlayerSpawn : NetworkBehaviour
     }
     [ClientRpc]
     //recive from server and set up the player
-    public void tankSetupClientRPC(ulong ID,string name){
+    //need adjust for same tank spawn
+    private void tankSetupClientRPC(ulong ID,string name){
         ulong clientId = NetworkManager.Singleton.LocalClientId;
 
-        GameObject tank = GameObject.Find(name);
-
-        Debug.Log("within tankSetupClientRPC");
-        Debug.Log("the passed perameter is: " +ID + "clientID is "+ clientId + " spawn " + tank.name);
         if(clientId == ID){
-            Debug.Log("control seetup for" +ID + "setting up "+tank.name);
-            TankController controller = tank.GetComponent<TankController>();
-            controller.InputEnabled = true;
-            camera.follow = tank;
+            //GameObject tank = GameObject.Find(name);
+            GameObject[] gameObjects = GameObject.FindGameObjectsWithTag("Tank");
+            foreach(GameObject tankObj in gameObjects){
+                if(tankObj.name == name && tankObj.GetComponent<NetworkObject>().IsLocalPlayer){
+                    
+                    IsActive = true;
+                    controller = tankObj.GetComponent<TankController>();
+                    controller.myID = ID;
+                    controller.InputEnabled = true;
+                    camera.follow = tankObj;
+                    return;
+                }
+            }
         }
-        }
+    }
 
 
 
