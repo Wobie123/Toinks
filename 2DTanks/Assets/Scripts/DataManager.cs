@@ -28,6 +28,12 @@ public class DataManager : MonoBehaviour
         }
     }
 
+    public enum NetworkID{
+        NULL,Server,Host,Client
+    };
+
+    public NetworkID networkID;
+
     public GameObject GrabShell(int index){
         return ShellList[index];
     }

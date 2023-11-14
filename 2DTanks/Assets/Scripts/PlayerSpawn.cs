@@ -18,31 +18,34 @@ public class PlayerSpawn : NetworkBehaviour
     private GameObject countDown;
     private float timer = 5f;
 
-     private Transform usaGrid;
-     private Transform germanyGrid;
-     private Transform ussrGrid;
+    public Transform usaGrid;
+    public Transform germanyGrid;
+    public Transform ussrGrid;
     public List<GameObject> tankList = new List<GameObject>();
     
-
+    
     // Start is called before the first frame update
     void Start()
     {
         countDown = this.gameObject.transform.GetChild(1).gameObject;
         countDownText = countDown.GetComponent<TextMeshProUGUI>();
 
+        if(DataManager.instance.networkID == DataManager.NetworkID.Server){
+            NetworkManager.Singleton.StartServer();
+            countDown.SetActive(true);
+            countDownText.text = "I am Server";
+            transform.GetChild(0).gameObject.SetActive(false);
+        }else if(DataManager.instance.networkID == DataManager.NetworkID.Client){
+            NetworkManager.Singleton.StartClient();
+            Debug.Log("IsClient: " + IsClient);
+        }else if(DataManager.instance.networkID == DataManager.NetworkID.Host){
+            NetworkManager.Singleton.StartHost();
+            Debug.Log("IsHost: " + IsHost);
+        }
+
+
         camera = GameObject.Find("Main Camera").GetComponent<CameraAim>();
-        //selectionButtons = this.gameObject.transform.GetChild(0);
-        //usaGrid = this.gameObject.transform.GetChild(1);
-        //germanyGrid = this.gameObject.transform.GetChild(2);
-        //ussrGrid = this.gameObject.transform.GetChild(3);
-        if (IsServer)
-        {
-            Debug.Log("I am the host (Client ID 0).");
-        }
-        else if (IsClient)
-        {
-            Debug.Log("I am a client with Client ID " + OwnerClientId);
-        }
+        
     }
 
     // Update is called once per frame
@@ -50,7 +53,6 @@ public class PlayerSpawn : NetworkBehaviour
     {
 
             if(controller == null && IsActive){//just died
-                Debug.Log("hi");
                 countDown.SetActive(true);
 
                 countDownText.text = Mathf.RoundToInt(timer).ToString();
@@ -113,7 +115,7 @@ public class PlayerSpawn : NetworkBehaviour
      y: Range(33f,-77.7f)
     */
     private void SelectTank(GameObject tank){
-
+        Debug.Log("selected " + tank);
         player = tank;
         ulong clientId = NetworkManager.Singleton.LocalClientId;
         SpawnTankServerRpc();
