@@ -22,13 +22,13 @@ public class CamoNet : MonoBehaviour
         if(col.gameObject.GetComponent<TankController>() != null &&  !col.gameObject.GetComponent<TankController>().CheckCamo()){
             setTimer+= Time.deltaTime;
             if(setTimer >= length){
-                col.gameObject.GetComponent<TankController>().ChangeUI(true);
+                col.gameObject.GetComponent<TankController>().ChangeCamoServerRpc(true);
                 setTimer = 0;
             }
         }
 
         if(col.gameObject.GetComponent<TankController>() != null &&col.gameObject.GetComponent<TankController>().PushingForce != 0){
-            col.gameObject.GetComponent<TankController>().ChangeUI(false);
+            col.gameObject.GetComponent<TankController>().ChangeCamoServerRpc(false);
         }
 
     }

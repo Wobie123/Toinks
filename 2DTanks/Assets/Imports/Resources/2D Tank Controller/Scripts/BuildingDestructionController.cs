@@ -110,6 +110,7 @@ public class BuildingDestructionController : MonoBehaviour
     // CollisionEnter detection for incoming shells
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        Debug.Log("collide with" + collision.gameObject.name);
         // Reducing hp
         if (collision.gameObject.GetComponent<ShellController>() != null)
             HP -= collision.gameObject.GetComponent<ShellController>().Damage;
@@ -132,6 +133,7 @@ public class BuildingDestructionController : MonoBehaviour
     // CollisionStay detection for ramming tanks
     private void OnCollisionStay2D(Collision2D collision)
     {
+        Debug.Log("collide with" + collision.gameObject.name);
         // Tank ramming the building/wall
         if (collision.gameObject.tag == TankTagName)
         {

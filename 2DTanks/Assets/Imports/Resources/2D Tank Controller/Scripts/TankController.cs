@@ -1682,7 +1682,8 @@ public class TankController : NetworkBehaviour
 
                     // Applying damage
                     if (rammingDamage > 0)
-                        TakeDamage((int)rammingDamage);
+                        TakeDamageServerRpc((int)rammingDamage);
+                        //TakeDamage((int)rammingDamage);
                 }
             }
 
@@ -2387,7 +2388,27 @@ public class TankController : NetworkBehaviour
     [ServerRpc]
     private void TankTrackServerRpc(Vector3 position,Quaternion rotation){
         SpawnTankTracks(position,rotation);
-    }   
+    } 
+
+    [ServerRpc(RequireOwnership = false)]
+    public void TakeDamageServerRpc(int amount){
+        TakeDamageClientRpc(amount);
+    }
+
+    [ClientRpc]
+    private void TakeDamageClientRpc(int amount){
+        TakeDamage(amount);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ChangeCamoServerRpc(bool result){
+        ChangeCamoClientRpc(result);
+    }
+
+    [ClientRpc]
+    private void ChangeCamoClientRpc(bool result){
+        ChangeUI(result);
+    }
     
     
 }

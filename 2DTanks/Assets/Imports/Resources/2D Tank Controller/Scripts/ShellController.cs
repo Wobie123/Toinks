@@ -209,7 +209,7 @@ public class ShellController : NetworkBehaviour
         rngDmgF = (float)Damage * UnityEngine.Random.Range(0.9f, 1.1f);
         rngDmg = (int)rngDmgF;
 
-        TankController.TakeDamage(rngDmg);
+        TankController.TakeDamageServerRpc(rngDmg);
 
         // Sound effects
         AudioPenetrate.GetComponent<AudioSource>().pitch *= pitchRandomizer;
@@ -295,7 +295,7 @@ public class ShellController : NetworkBehaviour
         rngDmgF = (float)Damage * UnityEngine.Random.Range(0.9f, 1.1f);
         rngDmg = (int)rngDmgF;
 
-        TankController.TakeDamage(rngDmg);
+        TankController.TakeDamageServerRpc(rngDmg);
 
         
         // Sound effect

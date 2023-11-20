@@ -53,6 +53,7 @@ public class PlayerSpawn : NetworkBehaviour
     {
 
             if(controller == null && IsActive){//just died
+                Cursor.visible = true; 
                 countDown.SetActive(true);
 
                 countDownText.text = Mathf.RoundToInt(timer).ToString();
