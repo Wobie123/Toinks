@@ -5,7 +5,7 @@ using UnityEngine;
 public class CamoNet : MonoBehaviour
 {
     [HideInInspector]public float setTimer = 0;
-    private float length = 4;
+    private float length = 2;
     // Start is called before the first frame update
     void Start()
     {
@@ -17,27 +17,18 @@ public class CamoNet : MonoBehaviour
     {
 
     }
-
-    /*
-    void OnTriggerEnter2D(Collider2D col)
-    {
-        if(col.gameObject.GetComponent<TankController>() != null){
-           col.gameObject.GetComponent<TankController>().ChangeUI(true);
-        }
-    }*/
-
     void OnTriggerStay2D(Collider2D col)
     {
         if(col.gameObject.GetComponent<TankController>() != null &&  !col.gameObject.GetComponent<TankController>().CheckCamo()){
             setTimer+= Time.deltaTime;
             if(setTimer >= length){
-                col.gameObject.GetComponent<TankController>().ChangeUI(true);
+                col.gameObject.GetComponent<TankController>().ChangeCamoServerRpc(true);
                 setTimer = 0;
             }
         }
 
         if(col.gameObject.GetComponent<TankController>() != null &&col.gameObject.GetComponent<TankController>().PushingForce != 0){
-            col.gameObject.GetComponent<TankController>().ChangeUI(false);
+            col.gameObject.GetComponent<TankController>().ChangeCamoServerRpc(false);
         }
 
     }

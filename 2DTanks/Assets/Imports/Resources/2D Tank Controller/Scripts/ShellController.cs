@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using Unity.Netcode;
 
-public class ShellController : MonoBehaviour
+public class ShellController : NetworkBehaviour
 {
     /*      Description:
      *      
@@ -135,6 +136,7 @@ public class ShellController : MonoBehaviour
     public String[] DustParticles;
 
     private ParticleSystem trailParticles;
+
     private ParticleSystem[] penetrationParticles;
     private ParticleSystem[] bounceParticles;
     private ParticleSystem[] ricochetParticles;
@@ -187,9 +189,9 @@ public class ShellController : MonoBehaviour
 
     
     
+    private NetworkObject ChildSpawn;
 
-
-
+    
     //------------------------------------------------------------------------------------------------------------------------------------------------
     //                                                                  Functions                                                                  
     //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -207,7 +209,7 @@ public class ShellController : MonoBehaviour
         rngDmgF = (float)Damage * UnityEngine.Random.Range(0.9f, 1.1f);
         rngDmg = (int)rngDmgF;
 
-        TankController.TakeDamage(rngDmg);
+        TankController.TakeDamageServerRpc(rngDmg);
 
         // Sound effects
         AudioPenetrate.GetComponent<AudioSource>().pitch *= pitchRandomizer;
@@ -293,7 +295,7 @@ public class ShellController : MonoBehaviour
         rngDmgF = (float)Damage * UnityEngine.Random.Range(0.9f, 1.1f);
         rngDmg = (int)rngDmgF;
 
-        TankController.TakeDamage(rngDmg);
+        TankController.TakeDamageServerRpc(rngDmg);
 
         
         // Sound effect
@@ -312,7 +314,7 @@ public class ShellController : MonoBehaviour
 
         GetComponent<Rigidbody2D>().simulated = false;
         GetComponent<Rigidbody2D>().isKinematic = true;
-
+        if(trailParticles != null)
         trailParticles.GetComponent<ParticleSystem>().Stop();
     }
 
@@ -582,10 +584,10 @@ public class ShellController : MonoBehaviour
 
     //____________________________________________START_______________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
-
     void Start()
     {
-        // Changing between hull and turret layers based on the z position of the shell. The position is set by the TankController when this shell is instantiated.
+       
+       // Changing between hull and turret layers based on the z position of the shell. The position is set by the TankController when this shell is instantiated.
 
         // Hull
         if (transform.position.z == 0)
@@ -605,7 +607,6 @@ public class ShellController : MonoBehaviour
         // Adding the force that shoots the shell
         GetComponent<Rigidbody2D>().AddRelativeForce(new Vector2(0, Velocity * GetComponent<Rigidbody2D>().mass), ForceMode2D.Impulse);
 
-
         // Other variables
         damageGiven = false;
         collisionDetected = false;
@@ -620,6 +621,7 @@ public class ShellController : MonoBehaviour
         //---------------------------------------------------
 
         // Instantiating particles as a child of the ParticleParent GameObject.
+       
 
         // Penetration Particles
         penetrationParticles = new ParticleSystem[PenetrationParticles.Length];
@@ -652,17 +654,25 @@ public class ShellController : MonoBehaviour
         {
             dustParticles[i] = Instantiate(Resources.Load("2D Tank Controller/" + DustParticles[i], typeof(ParticleSystem)), ParticleParent.transform.position, ParticleParent.transform.rotation, ParticleParent.transform) as ParticleSystem;
         }
-
+        
         //Trail Particles
-        trailParticles = Instantiate(Resources.Load("2D Tank Controller/" + TrailParticles, typeof(ParticleSystem)), ParticleParent.transform.position, ParticleParent.transform.rotation, ParticleParent.transform) as ParticleSystem;
+        var trail = Resources.Load("2D Tank Controller/" + TrailParticles);
+        GameObject trailObj = Instantiate(trail, ParticleParent.transform.position, ParticleParent.transform.rotation, ParticleParent.transform) as GameObject;
+        ParticleSystem particleSystem = trailObj.GetComponent<ParticleSystem>();
+       if (particleSystem != null)
+        {
+            trailParticles = particleSystem;
+        }else{
+            Debug.LogError("The object instantiated does not contain a ParticleSystem component.");
+        }
+        
     }
-
 
 
 
     //____________________________________________UPDATE_______________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
-
+    
     void Update ()
     {
         // Calculating lifetime
@@ -672,7 +682,10 @@ public class ShellController : MonoBehaviour
         // If lifetime is used -> Destroy shell
         if (timeExisted >= Lifetime)
         {
-            GameObject.Destroy(gameObject);
+            //GameObject.Destroy(gameObject);
+            DestroyServerRpc();
+            //gameObject.GetComponent<NetworkObject>().Despawn();
+            //GameObject.Destroy(gameObject);
         }
 
         
@@ -717,4 +730,18 @@ public class ShellController : MonoBehaviour
             }                     
         }       
     }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void DestroyServerRpc(){
+        //ChildSpawn.Despawn(true);
+        gameObject.GetComponent<NetworkObject>().Despawn();
+        GameObject.Destroy(gameObject);
+    }
+
+    private bool IsOwnedByLocalPlayer()
+{
+    // Check if the object is owned by the local player
+    return gameObject.GetComponent<NetworkObject>().IsOwner;
+}
+
 }

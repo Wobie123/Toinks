@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 
-public class TrackMarkController : MonoBehaviour
+public class TrackMarkController : NetworkBehaviour
 {
     /*      Description:
      *      
@@ -36,6 +37,13 @@ public class TrackMarkController : MonoBehaviour
         spriteRenderer.color = trackColor;
 
         if (alpha <= 0)
-            Destroy(gameObject);
+            DestroyServerRpc();
 	}
+
+    [ServerRpc(RequireOwnership = false)]
+    private void DestroyServerRpc(){
+        //ChildSpawn.Despawn(true);
+        gameObject.GetComponent<NetworkObject>().Despawn();
+        GameObject.Destroy(gameObject);
+    }
 }

@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-
+using Unity.Netcode;
 //---------------------------------Global---------------------------------
 public enum TankTeamEnum{
         NULL,Team1, Team2
     };
-public class TankController : MonoBehaviour
+public class TankController : NetworkBehaviour
 {
     /*      Description:
      *      
@@ -22,7 +22,7 @@ public class TankController : MonoBehaviour
     //------------------------------------------------------------------------------------------------------------------------------------------------
     //                                                                  Settings                                                                  
     //------------------------------------------------------------------------------------------------------------------------------------------------
-
+    
     [Space(20)]
     [Header("______________________SETTINGS____________________________________________________________________________________________________________________________________________________________")]
     [Space(10)]
@@ -163,7 +163,8 @@ public class TankController : MonoBehaviour
     [Tooltip("Team tank is on")]
     public TankTeamEnum TankTeam;
     
-
+    [HideInInspector]
+    public ulong myID;
 
     //---------------------------------------------------
     //                      Health
@@ -256,8 +257,10 @@ public class TankController : MonoBehaviour
     [Tooltip("Path for the shell in the Resources folder.")]
     public string ShellPath;
 
+    public string MachineGunShellPath;
 
-
+    private int MainGunShell;
+    private int MachineGunShell;
     //---------------------------------------------------
     //                   Tank Parts
     //---------------------------------------------------
@@ -405,7 +408,6 @@ public class TankController : MonoBehaviour
 
     public bool machineGunEnable = false;
     public GameObject machineGunPort;
-    public GameObject machineGunShell;
     public int machineGunRounds = 30;
     public int machineGunReloadSpeed;
     [Range(0.2f,0.06f)]
@@ -529,7 +531,7 @@ public class TankController : MonoBehaviour
     //                  Track Health
     //---------------------------------------------------
 
-    private bool tracked;
+    public bool tracked;
 
     private bool lTrackTracked;
     private bool rTrackTracked;
@@ -749,9 +751,10 @@ public class TankController : MonoBehaviour
         
         
         // Firing shell
-        Instantiate(Resources.Load("2D Tank Controller/" + ShellPath, typeof(GameObject)), shellPosition, Quaternion.Euler(0, 0 , Turret.transform.eulerAngles.z + randomizedDispersion));
-
-
+        
+        //Instantiate(Resources.Load("2D Tank Controller/" + ShellPath, typeof(GameObject)), shellPosition, Quaternion.Euler(0, 0 , Turret.transform.eulerAngles.z + randomizedDispersion));
+        //GameObject instantiatedObject =Instantiate(Resources.Load<GameObject>("2D Tank Controller/" + ShellPath), shellPosition, Quaternion.Euler(0, 0 , Turret.transform.eulerAngles.z + randomizedDispersion));
+        FireServerRpc(MainGunShell,shellPosition,Turret.transform.eulerAngles.z + randomizedDispersion);
         // Sound and particle and effects
         AudioGunShoot.Play();
 
@@ -1505,16 +1508,16 @@ public class TankController : MonoBehaviour
             // If the right track has moved the length of one track mark piece -> Place track mark Prefab
             if (lTrackMarkDistance > 0.64f)
             {
-                Instantiate(Resources.Load("2D Tank Controller/" + TrackMarkPath, typeof(GameObject)), lTrackMarkPositionObject.transform.position, transform.rotation);
-
+                //Instantiate(Resources.Load("2D Tank Controller/" + TrackMarkPath, typeof(GameObject)), lTrackMarkPositionObject.transform.position, transform.rotation);
+                TankTrackServerRpc(lTrackMarkPositionObject.transform.position, transform.rotation);
                 lTrackMarkDistance = 0;
             }
 
             // If the left track has moved the length of one track mark piece -> Place track mark Prefab
             if (rTrackMarkDistance > 0.64f)
             {
-                Instantiate(Resources.Load("2D Tank Controller/" + TrackMarkPath, typeof(GameObject)), rTrackMarkPositionObject.transform.position, transform.rotation);
-
+                //Instantiate(Resources.Load("2D Tank Controller/" + TrackMarkPath, typeof(GameObject)), rTrackMarkPositionObject.transform.position, transform.rotation);
+                TankTrackServerRpc(rTrackMarkPositionObject.transform.position, transform.rotation);
                 rTrackMarkDistance = 0;
             }
         }
@@ -1679,7 +1682,8 @@ public class TankController : MonoBehaviour
 
                     // Applying damage
                     if (rammingDamage > 0)
-                        TakeDamage((int)rammingDamage);
+                        TakeDamageServerRpc((int)rammingDamage);
+                        //TakeDamage((int)rammingDamage);
                 }
             }
 
@@ -1706,6 +1710,8 @@ public class TankController : MonoBehaviour
 
     private void Start()
     {
+        MainGunShell = DataManager.instance.GrabShellIndex(Resources.Load<GameObject>("2D Tank Controller/" + ShellPath) as GameObject);
+        MachineGunShell = DataManager.instance.GrabShellIndex(Resources.Load<GameObject>("2D Tank Controller/" + MachineGunShellPath));
         //---------------------------------------------------
         //                     Shooting
         //---------------------------------------------------
@@ -2009,7 +2015,6 @@ public class TankController : MonoBehaviour
 
     private void Update()
     {
-        
         //------------------------------------------------------------------------------------------------------------
         //                                             Input
         //------------------------------------------------------------------------------------------------------------
@@ -2040,23 +2045,7 @@ public class TankController : MonoBehaviour
 
         //--------machine gun---------------------------
         if (Input.GetKey(KeyCode.Space) && machineGunEnable && machineGunReloaded && machineGunRate >= machineGunRateFire && InputEnabled == true){
-            Debug.Log("brrr");
-            machineGunRounds-=1;
-            machineGunFireAudio.Play();
-
-            Vector3 PortPosition = machineGunPort.transform.position;
-            int random = Random.Range(0,3);//random turrent to hull
-            if(random == 0){
-                PortPosition = machineGunPort.transform.position + hullOriginVector;
-            }
-            float RandomSpread = Random.Range(-machineGunSpread,machineGunSpread);
-            Instantiate(machineGunShell, PortPosition, Quaternion.Euler(0, 0 , Turret.transform.eulerAngles.z + RandomSpread));
-            if(machineGunRounds <= 0){
-                machineGunReloaded = false;
-                machineGunReloadAudio.Play();
-                machineGunRounds=0;
-            }
-            machineGunRate = 0;//reset rate of fire timer
+            FireMachineGun();
         }
 
 
@@ -2277,8 +2266,29 @@ public class TankController : MonoBehaviour
         
         // Calculating pushing force for destroying structures (buildings and walls)
         PushingForce = (Mathf.Pow(Rigidbody.velocity.magnitude, 2) * Rigidbody.mass + EnginePower * (Mathf.Abs(verticalInput) + (Mathf.Abs(horizontalInput) * 0.1f)) * Rigidbody.mass) / 10000;
+    }//end of update
+    private void FireMachineGun(){
+            machineGunRounds-=1;
+            machineGunFireAudio.Play();
+            
+            Vector3 PortPosition = machineGunPort.transform.position;
+            int random = Random.Range(0,3);//random turrent to hull
+            if(random == 0){
+                PortPosition = machineGunPort.transform.position + hullOriginVector;
+            }
+            float RandomSpread = Random.Range(-machineGunSpread,machineGunSpread);
+            
+           
+            //Instantiate(Resources.Load<GameObject>("2D Tank Controller/" + MachineGunShellPath), PortPosition, Quaternion.Euler(0, 0 , Turret.transform.eulerAngles.z + RandomSpread));
+           
+            FireServerRpc(MachineGunShell,PortPosition,Turret.transform.eulerAngles.z + RandomSpread);
+            if(machineGunRounds <= 0){
+                machineGunReloaded = false;
+                machineGunReloadAudio.Play();
+                machineGunRounds=0;
+            }
+            machineGunRate = 0;//reset 
     }
-    
 
 
     //____________________________________________FIXED UPDATE______________________________________________________________________________________________________________________________________________________________________________________________________________________________
@@ -2342,4 +2352,63 @@ public class TankController : MonoBehaviour
     public void ResetWasHit(){
         wasHit = false;
     }
+
+    public void ShouldFire(){
+        // Calling the Fire function if alive and reloaded
+        if (reloaded == true && IsExploded == false)
+        {
+            Fire();
+        }else if(reloaded == false&& timeReloaded+1 < ReloadTime &&IsExploded == false && machineGunEnable && machineGunReloaded && machineGunRate >= machineGunRateFire){
+            FireMachineGun();
+        }
+    }
+
+    //--------------------------NetworkBehavior------------------------------
+    private void SpawnShell(int ShellIndex,Vector3 position,float angle,ulong clientId){
+        GameObject instantiatedObject =Instantiate(DataManager.instance.GrabShell(ShellIndex),position, Quaternion.Euler(0, 0 ,angle));
+        NetworkObject netObject = instantiatedObject.GetComponent<NetworkObject>();
+        if(clientId != NetworkManager.Singleton.LocalClientId){
+            netObject.SpawnWithOwnership(NetworkManager.ServerClientId);
+        }else
+            netObject.Spawn();
+    }
+    
+    [ServerRpc]
+    private void FireServerRpc(int shellIndex,Vector3 position,float angle,ServerRpcParams serverRpcParams = default){
+        var clientId = serverRpcParams.Receive.SenderClientId;
+        SpawnShell(shellIndex, position, angle,clientId);
+    }
+
+    private void SpawnTankTracks(Vector3 position,Quaternion rotation){
+        //Instantiate(Resources.Load("2D Tank Controller/" + TrackMarkPath, typeof(GameObject)), lTrackMarkPositionObject.transform.position, transform.rotation);
+        GameObject instantiatedObject = Instantiate(Resources.Load("2D Tank Controller/" + TrackMarkPath, typeof(GameObject)),position,rotation) as GameObject;
+        NetworkObject netObject = instantiatedObject.GetComponent<NetworkObject>();
+        netObject.Spawn();
+    }
+    [ServerRpc]
+    private void TankTrackServerRpc(Vector3 position,Quaternion rotation){
+        SpawnTankTracks(position,rotation);
+    } 
+
+    [ServerRpc(RequireOwnership = false)]
+    public void TakeDamageServerRpc(int amount){
+        TakeDamageClientRpc(amount);
+    }
+
+    [ClientRpc]
+    private void TakeDamageClientRpc(int amount){
+        TakeDamage(amount);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ChangeCamoServerRpc(bool result){
+        ChangeCamoClientRpc(result);
+    }
+
+    [ClientRpc]
+    private void ChangeCamoClientRpc(bool result){
+        ChangeUI(result);
+    }
+    
+    
 }
